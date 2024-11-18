@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Pessoal</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="iphone-container">
+        <h1>Assistente Pessoal</h1>
+
+        <!-- Substituindo o botão original pelo novo div -->
+        <div id="microfone" class="mic">
+            <i class="mic-icon"></i>
+            <div class="mic-shadow"></div>
+        </div>
+
+        <p id="faleAlgo" class="loading">Fale algo...</p>
+        <p id="resposta" class="loading"></p>
+    </div>
+
+    <script>
+        const botaoMicrofone = document.getElementById('microfone');
+        const respostaElemento = document.getElementById('resposta');
+        const faleAlgoElemento = document.getElementById('faleAlgo');
+
+        // Verifica se o navegador suporta a API de reconhecimento de fala
+        const reconhecimento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+        reconhecimento.onresult = function (event) {
+            const textoFalado = event.results[0][0].transcript;
+
+            // Esconde "Fale algo..." e mostra a resposta
+            faleAlgoElemento.style.display = 'none';
+            respostaElemento.style.display = 'block';
+            respostaElemento.classList.add('loading'); // Mostrar carregando enquanto processa
+
+            // Envia o texto falado para o backend
+            fetch('/resposta', {
+                method: 'POST',
+                body: JSON.stringify({ texto: textoFalado }),
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Exibe a resposta
+                const resposta = data.resposta;
+                respostaElemento.innerHTML = resposta;
+                respostaElemento.classList.remove('loading');
+            })
+            .catch(err => {
+                respostaElemento.innerHTML = "Erro ao buscar resposta.";
+                respostaElemento.classList.remove('loading');
+            });
+        };
+
+        botaoMicrofone.onclick = function () {
+            reconhecimento.start();
+        };
+    </script>
+</body>
+
+</html>
